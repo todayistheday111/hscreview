@@ -81,9 +81,26 @@ document.fonts.addEventListener("loadingdone",()=>drawFuture());
 // A single PNG containing both semesters and the student's reason.
 let timetableCanvas=null;
 function timetableLines(ctx,text,maxWidth){
- const result=[];for(const paragraph of String(text).replace(/\r/g,'').split('\n')){let line='';for(const ch of paragraph){if(line&&ctx.measureText(line+ch).width>maxWidth){result.push(line);line=ch}else line+=ch}result.push(line)}return result;
-}
-async function makeTimetableImage(){
+ const result=[];
+ for(const paragraph of String(text).replace(/\r/g,"").split("\n")){
+  let line="",pendingSpace=false;
+  const tokens=paragraph.match(/\s+|[^\s/]+\/?|\/+/g)||[];
+  for(const token of tokens){
+   if(/^\s+$/.test(token)){pendingSpace=!!line;continue}
+   const separator=pendingSpace&&line&&!line.endsWith("/")?" ":"";pendingSpace=false;
+   const candidate=line+separator+token;
+   if(ctx.measureText(candidate).width<=maxWidth){line=candidate;continue}
+   if(line){result.push(line);line=""}
+   let piece="";
+   for(const ch of token){
+    if(piece&&ctx.measureText(piece+ch).width>maxWidth){result.push(piece);piece=ch}else piece+=ch
+   }
+   line=piece;
+  }
+  result.push(line)
+ }
+ return result;
+}async function makeTimetableImage(){
  await document.fonts.ready;
  const c=document.createElement('canvas');c.width=1800;let ctx=c.getContext('2d');
  const body="'Gowun Dodum','Malgun Gothic',sans-serif",head="'Jua','Malgun Gothic',sans-serif";
